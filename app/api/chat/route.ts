@@ -9,6 +9,7 @@ export async function POST(req: Request) {
 
   const result = await streamText({
     model: openai("gpt-4o-mini"),
+    parameters: {},
     messages,
   });
 
