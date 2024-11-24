@@ -33,6 +33,7 @@ export default function InteractiveAvatar() {
   const [knowledgeId, setKnowledgeId] = useState<string>("");
   const [avatarId, setAvatarId] = useState<string>("");
   const [language, setLanguage] = useState<string>('en');
+  const [firstName, setFirstName] = useState<string>("");
 
   const [data, setData] = useState<StartAvatarResponse>();
   const [text, setText] = useState<string>("");
@@ -89,12 +90,12 @@ export default function InteractiveAvatar() {
     });
     try {
       const res = await avatar.current.createStartAvatar({
-        quality: AvatarQuality.Low,
-        avatarName: avatarId,
-        knowledgeId: knowledgeId, // Or use a custom `knowledgeBase`.
+        quality: AvatarQuality.High,
+        avatarName: "ef08039a41354ed5a20565db899373f3",
+        knowledgeId: "4eae19ef69d948a28b47cd30aa61e77f", // Or use a custom `knowledgeBase`.
         voice: {
           rate: 1.5, // 0.5 ~ 1.5
-          emotion: VoiceEmotion.EXCITED,
+          emotion: VoiceEmotion.FRIENDLY,
         },
         language: language,
         disableIdleTimeout: true,
@@ -204,7 +205,7 @@ export default function InteractiveAvatar() {
                   variant="shadow"
                   onClick={handleInterrupt}
                 >
-                  Interrupt task
+                  Interrupt 
                 </Button>
                 <Button
                   className="bg-gradient-to-tr from-indigo-500 to-indigo-300  text-white rounded-lg"
@@ -220,37 +221,13 @@ export default function InteractiveAvatar() {
             <div className="h-full justify-center items-center flex flex-col gap-8 w-[500px] self-center">
               <div className="flex flex-col gap-2 w-full">
                 <p className="text-sm font-medium leading-none">
-                  Custom Knowledge ID (optional)
+                  Enter your first name
                 </p>
                 <Input
-                  placeholder="Enter a custom knowledge ID"
-                  value={knowledgeId}
-                  onChange={(e) => setKnowledgeId(e.target.value)}
+                  placeholder="First Name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
                 />
-                <p className="text-sm font-medium leading-none">
-                  Custom Avatar ID (optional)
-                </p>
-                <Input
-                  placeholder="Enter a custom avatar ID"
-                  value={avatarId}
-                  onChange={(e) => setAvatarId(e.target.value)}
-                />
-                <Select
-                  placeholder="Or select one from these example avatars"
-                  size="md"
-                  onChange={(e) => {
-                    setAvatarId(e.target.value);
-                  }}
-                >
-                  {AVATARS.map((avatar) => (
-                    <SelectItem
-                      key={avatar.avatar_id}
-                      textValue={avatar.avatar_id}
-                    >
-                      {avatar.name}
-                    </SelectItem>
-                  ))}
-                </Select>
                 <Select
                   label="Select language"
                   placeholder="Select language"
@@ -280,52 +257,7 @@ export default function InteractiveAvatar() {
             <Spinner color="default" size="lg" />
           )}
         </CardBody>
-        <Divider />
-        <CardFooter className="flex flex-col gap-3 relative">
-          <Tabs
-            aria-label="Options"
-            selectedKey={chatMode}
-            onSelectionChange={(v) => {
-              handleChangeChatMode(v);
-            }}
-          >
-            <Tab key="text_mode" title="Text mode" />
-            <Tab key="voice_mode" title="Voice mode" />
-          </Tabs>
-          {chatMode === "text_mode" ? (
-            <div className="w-full flex relative">
-              <InteractiveAvatarTextInput
-                disabled={!stream}
-                input={text}
-                label="Chat"
-                loading={isLoadingRepeat}
-                placeholder="Type something for the avatar to respond"
-                setInput={setText}
-                onSubmit={handleSpeak}
-              />
-              {text && (
-                <Chip className="absolute right-16 top-3">Listening</Chip>
-              )}
-            </div>
-          ) : (
-            <div className="w-full text-center">
-              <Button
-                isDisabled={!isUserTalking}
-                className="bg-gradient-to-tr from-indigo-500 to-indigo-300 text-white"
-                size="md"
-                variant="shadow"
-              >
-                {isUserTalking ? "Listening" : "Voice chat"}
-              </Button>
-            </div>
-          )}
-        </CardFooter>
       </Card>
-      <p className="font-mono text-right">
-        <span className="font-bold">Console:</span>
-        <br />
-        {debug}
-      </p>
     </div>
   );
 }
