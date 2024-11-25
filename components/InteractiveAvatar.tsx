@@ -20,6 +20,8 @@ import {
 } from "@nextui-org/react";
 import { useEffect, useRef, useState } from "react";
 import { useMemoizedFn, usePrevious } from "ahooks";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCheckCircle } from '@fortawesome/free-solid-svg-icons';
 
 import InteractiveAvatarTextInput from "./InteractiveAvatarTextInput";
 
@@ -182,6 +184,29 @@ export default function InteractiveAvatar() {
 
   return (
     <div className="w-full flex flex-col gap-4">
+      <Card>
+        <CardBody className="flex justify-center items-center">
+          <p className="text-lg font-bold">Welcome to your coaching session</p>
+        </CardBody>
+      </Card>
+      <Card>
+        <CardBody className="flex flex-col justify-center items-start p-4">
+          <ul className="pl-5">
+            <li className="flex items-center">
+              <FontAwesomeIcon icon={faCheckCircle} className="mr-2 text-indigo-500" />
+              We’re glad you’re here! Start by selecting your language and sharing your name. Next reflect on a few things to think about to help you make the most of your coaching session today.
+            </li>
+            <li className="flex items-center">
+              <FontAwesomeIcon icon={faCheckCircle} className="mr-2 text-indigo-500" />
+              Identify your coaching topic: Is it a specific situation, relationship or behavior vs part of a bigger challenge or pattern you’d like to change?
+            </li>
+            <li className="flex items-center">
+              <FontAwesomeIcon icon={faCheckCircle} className="mr-2 text-indigo-500" />
+              Determine where your coach can help you most: Do you want help in identifying the problem, exploring it more deeply, brainstorming solutions or creating a clear action plan?
+            </li>
+          </ul>
+        </CardBody>
+      </Card>
       <Card>
         <CardBody className="h-[500px] flex flex-col justify-center items-center">
           {stream ? (
