@@ -22,10 +22,12 @@ import { useEffect, useRef, useState } from "react";
 import { useMemoizedFn, usePrevious } from "ahooks";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons';
+import { MongoClient, MongoClientOptions } from "mongodb";
 
 import InteractiveAvatarTextInput from "./InteractiveAvatarTextInput";
 
 import {AVATARS, STT_LANGUAGE_LIST} from "@/app/lib/constants";
+
 
 export default function InteractiveAvatar() {
   const [isLoadingSession, setIsLoadingSession] = useState(false);
@@ -94,9 +96,10 @@ export default function InteractiveAvatar() {
       const res = await avatar.current.createStartAvatar({
         quality: AvatarQuality.High,
         avatarName: "ef08039a41354ed5a20565db899373f3",
-        knowledgeId: "4eae19ef69d948a28b47cd30aa61e77f", // Or use a custom `knowledgeBase`.
+        knowledgeId: "4eae19ef69d948a28b47cd30aa61e77f", 
+        knowlegeBase: "The user's first name is " + firstName.toString(), // Or use a custom `knowledgeBase`.
         voice: {
-          rate: 1.5, // 0.5 ~ 1.5
+          rate: 1.2, // 0.5 ~ 1.5
           emotion: VoiceEmotion.FRIENDLY,
         },
         language: language,
