@@ -1,4 +1,4 @@
-import type { StartAvatarResponse } from "@heygen/streaming-avatar";
+import type { SpeakRequest, StartAvatarResponse } from "@heygen/streaming-avatar";
 
 import StreamingAvatar, {
   AvatarQuality,
@@ -22,7 +22,6 @@ import { useEffect, useRef, useState } from "react";
 import { useMemoizedFn, usePrevious } from "ahooks";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons';
-import { MongoClient, MongoClientOptions } from "mongodb";
 
 import InteractiveAvatarTextInput from "./InteractiveAvatarTextInput";
 
@@ -38,6 +37,9 @@ export default function InteractiveAvatar() {
   const [avatarId, setAvatarId] = useState<string>("");
   const [language, setLanguage] = useState<string>('en');
   const [firstName, setFirstName] = useState<string>("");
+  const [lastName, setLastName] = useState<string>("");
+  const [role, setRole] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
 
   const [data, setData] = useState<StartAvatarResponse>();
   const [text, setText] = useState<string>("");
@@ -63,9 +65,44 @@ export default function InteractiveAvatar() {
     return "";
   }
 
+  async function saveUserData() {
+    const userData = {
+      firstName,
+      lastName,
+      role,
+      email,
+      language,
+    };
+
+    try {
+      const response = await fetch("http://localhost:9000/api/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save user data");
+      }
+
+      console.log("User data saved successfully");
+    } catch (error) {
+      console.error("Error saving user data:", error);
+    }
+  }
+
+  function createUserSummary() {
+    return `The user's name is ${firstName} ${lastName}, and they are a ${role}. Their email is ${email}, and they prefer to communicate in ${language}.`;
+  }
+
   async function startSession() {
     setIsLoadingSession(true);
+    await saveUserData();
     const newToken = await fetchAccessToken();
+
+    const userSummary = createUserSummary(); // Create the user summary string
 
     avatar.current = new StreamingAvatar({
       token: newToken,
@@ -95,11 +132,11 @@ export default function InteractiveAvatar() {
     try {
       const res = await avatar.current.createStartAvatar({
         quality: AvatarQuality.High,
-        avatarName: "ef08039a41354ed5a20565db899373f3",
+        avatarName: "eb0a8cc8046f476da551a5559fbb5c82",
         knowledgeId: "4eae19ef69d948a28b47cd30aa61e77f", 
-        knowlegeBase: "The user's first name is " + firstName.toString(), // Or use a custom `knowledgeBase`.
+        knowledgeBase: userSummary, // Use the user summary string
         voice: {
-          rate: 1.2, // 0.5 ~ 1.5
+          rate: 0.9, // 0.5 ~ 1.5
           emotion: VoiceEmotion.FRIENDLY,
         },
         language: language,
@@ -107,7 +144,18 @@ export default function InteractiveAvatar() {
       });
 
       setData(res);
-      // default to voice mode
+
+      function createIntroSpeech() {
+        return `Welcome! I'm excited to start working with you, ${firstName}. I see that your role is as a ${role}. What would you like to discuss today?`;
+      }
+      // Speak introductory text
+      await avatar.current.speak({
+        text: createIntroSpeech(),
+        taskType: TaskType.REPEAT,
+        taskMode: TaskMode.ASYNC
+      });
+
+      // Start listening to the user
       await avatar.current?.startVoiceChat({
         useSilencePrompt: false
       });
@@ -118,6 +166,8 @@ export default function InteractiveAvatar() {
       setIsLoadingSession(false);
     }
   }
+
+  
   async function handleSpeak() {
     setIsLoadingRepeat(true);
     if (!avatar.current) {
@@ -125,8 +175,9 @@ export default function InteractiveAvatar() {
 
       return;
     }
+
     // speak({ text: text, task_type: TaskType.REPEAT })
-    await avatar.current.speak({ text: text, taskType: TaskType.REPEAT, taskMode: TaskMode.SYNC }).catch((e) => {
+    await avatar.current.speak({ text: text, taskType: TaskType.CHAT, taskMode: TaskMode.SYNC }).catch((e) => {  //Change from TaskType.REPEAT
       setDebug(e.message);
     });
     setIsLoadingRepeat(false);
@@ -255,6 +306,30 @@ export default function InteractiveAvatar() {
                   placeholder="First Name"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
+                />
+                <p className="text-sm font-medium leading-none">
+                  Enter your last name
+                </p>
+                <Input
+                  placeholder="Last Name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                />
+                <p className="text-sm font-medium leading-none">
+                  Enter your role
+                </p>
+                <Input
+                  placeholder="Role"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                />
+                <p className="text-sm font-medium leading-none">
+                  Enter your email
+                </p>
+                <Input
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
                 <Select
                   label="Select language"
