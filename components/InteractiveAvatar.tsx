@@ -97,12 +97,30 @@ export default function InteractiveAvatar() {
     return `The user's name is ${firstName} ${lastName}, and they are a ${role}. Their email is ${email}, and they prefer to communicate in ${language}.`;
   }
 
+  async function loadKnowledgeBase() {
+    try {
+      const response = await fetch('http://localhost:9000/api/knowledge-base', {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch knowledge base');
+      }
+
+      const knowledgeBaseContent = await response.text();
+
+      return `The user's name is ${firstName} ${lastName}, and they are a ${role}. Their email is ${email}, and they prefer to communicate in ${language}. ${knowledgeBaseContent}`;
+    } catch (error) {
+      console.error("Error fetching knowledge base:", error);
+      return `The user's name is ${firstName} ${lastName}, and they are a ${role}. Their email is ${email}, and they prefer to communicate in ${language}.`;
+    }
+  }
+
   async function startSession() {
     setIsLoadingSession(true);
     await saveUserData();
     const newToken = await fetchAccessToken();
-
-    const userSummary = createUserSummary(); // Create the user summary string
+    const knowledgeBaseContent = await loadKnowledgeBase();
 
     avatar.current = new StreamingAvatar({
       token: newToken,
@@ -133,11 +151,10 @@ export default function InteractiveAvatar() {
       const res = await avatar.current.createStartAvatar({
         quality: AvatarQuality.High,
         avatarName: "eb0a8cc8046f476da551a5559fbb5c82",
-        knowledgeId: "4eae19ef69d948a28b47cd30aa61e77f", 
-        knowledgeBase: userSummary, // Use the user summary string
+        knowledgeBase: knowledgeBaseContent,
         voice: {
-          rate: 0.9, // 0.5 ~ 1.5
-          emotion: VoiceEmotion.FRIENDLY,
+          rate: 0.5,
+          emotion: VoiceEmotion.EXCITED,
         },
         language: language,
         disableIdleTimeout: true,
@@ -152,12 +169,12 @@ export default function InteractiveAvatar() {
       await avatar.current.speak({
         text: createIntroSpeech(),
         taskType: TaskType.REPEAT,
-        taskMode: TaskMode.ASYNC
+        taskMode: TaskMode.SYNC
       });
 
       // Start listening to the user
       await avatar.current?.startVoiceChat({
-        useSilencePrompt: false
+        useSilencePrompt: true // TR change from false to true - testing
       });
       setChatMode("voice_mode");
     } catch (error) {
@@ -177,7 +194,7 @@ export default function InteractiveAvatar() {
     }
 
     // speak({ text: text, task_type: TaskType.REPEAT })
-    await avatar.current.speak({ text: text, taskType: TaskType.CHAT, taskMode: TaskMode.SYNC }).catch((e) => {  //Change from TaskType.REPEAT
+    await avatar.current.speak({ text: text, taskType: TaskType.TALK, taskMode: TaskMode.SYNC }).catch((e) => {  //Change from TaskType.REPEAT
       setDebug(e.message);
     });
     setIsLoadingRepeat(false);
