@@ -26,6 +26,7 @@ import { faCheckCircle } from '@fortawesome/free-solid-svg-icons';
 import InteractiveAvatarTextInput from "./InteractiveAvatarTextInput";
 
 import {AVATARS, STT_LANGUAGE_LIST} from "@/app/lib/constants";
+import RatingStars from "./RatingStars";
 
 
 export default function InteractiveAvatar() {
@@ -40,6 +41,7 @@ export default function InteractiveAvatar() {
   const [lastName, setLastName] = useState<string>("");
   const [role, setRole] = useState<string>("");
   const [email, setEmail] = useState<string>("");
+  const [linkedInUrl, setLinkedInUrl] = useState<string>("");
 
   const [data, setData] = useState<StartAvatarResponse>();
   const [text, setText] = useState<string>("");
@@ -47,6 +49,12 @@ export default function InteractiveAvatar() {
   const avatar = useRef<StreamingAvatar | null>(null);
   const [chatMode, setChatMode] = useState("text_mode");
   const [isUserTalking, setIsUserTalking] = useState(false);
+  const [userTopic, setUserTopic] = useState<string>("");
+
+  const [rating, setRating] = useState<number>(0);
+  const [showRating, setShowRating] = useState<boolean>(false);
+  const [selectedTopic, setSelectedTopic] = useState<string>("");
+  const [sessionStarted, setSessionStarted] = useState(false);
 
   async function fetchAccessToken() {
     try {
@@ -72,6 +80,7 @@ export default function InteractiveAvatar() {
       role,
       email,
       language,
+      linkedInUrl,
     };
 
     try {
@@ -109,10 +118,10 @@ export default function InteractiveAvatar() {
 
       const knowledgeBaseContent = await response.text();
 
-      return `The user's name is ${firstName} ${lastName}, and they are a ${role}. Their email is ${email}, and they prefer to communicate in ${language}. ${knowledgeBaseContent}`;
+      return `The user's name is ${firstName} ${lastName}, and they are a ${role}. Their email is ${email}, and they prefer to communicate in ${language}. In this session, the user would like to discuss the following topic: ${userTopic}. ${knowledgeBaseContent}`;
     } catch (error) {
       console.error("Error fetching knowledge base:", error);
-      return `The user's name is ${firstName} ${lastName}, and they are a ${role}. Their email is ${email}, and they prefer to communicate in ${language}.`;
+      return `The user's name is ${firstName} ${lastName}, and they are a ${role}. Their email is ${email}, and they prefer to communicate in ${language}. In this session, the user would like to discuss the following topic: ${userTopic}`;
     }
   }
 
@@ -150,7 +159,7 @@ export default function InteractiveAvatar() {
     try {
       const res = await avatar.current.createStartAvatar({
         quality: AvatarQuality.High,
-        avatarName: "eb0a8cc8046f476da551a5559fbb5c82",
+        avatarName: "2c53adbe957d48f8873b5661bea3c8e3",
         knowledgeBase: knowledgeBaseContent,
         voice: {
           rate: 0.5,
@@ -161,9 +170,10 @@ export default function InteractiveAvatar() {
       });
 
       setData(res);
+      setSessionStarted(true);
 
       function createIntroSpeech() {
-        return `Welcome! I'm excited to start working with you, ${firstName}. I see that your role is as a ${role}. What would you like to discuss today?`;
+        return `Welcome! I'm excited to start working with you, ${firstName}. I see that your role is as a ${role} and that you'd like to discuss the following topic: ${userTopic}. Shall we get started?`;
       }
       // Speak introductory text
       await avatar.current.speak({
@@ -214,6 +224,7 @@ export default function InteractiveAvatar() {
   async function endSession() {
     await avatar.current?.stopAvatar();
     setStream(undefined);
+    setShowRating(true);
   }
 
   const handleChangeChatMode = useMemoizedFn(async (v) => {
@@ -253,31 +264,51 @@ export default function InteractiveAvatar() {
     }
   }, [mediaStream, stream]);
 
+  const handleRatingSubmit = (rating) => {
+    setRating(rating);
+    setShowRating(false);
+    updateUserDataWithRating(rating); // Call the API to update user data
+  };
+
+  async function updateUserDataWithRating(rating) {
+    const sessionData = {
+      date: new Date().toISOString(),
+      topic: userTopic,
+      rating,
+    };
+
+    try {
+      const response = await fetch("http://localhost:9000/api/session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(sessionData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update session data");
+      }
+
+      console.log("Session data updated successfully");
+    } catch (error) {
+      console.error("Error updating session data:", error);
+    }
+  }
+
   return (
     <div className="w-full flex flex-col gap-4">
+      {showRating && (
+        <div className="flex justify-center items-center h-screen">
+          <RatingStars onSubmit={handleRatingSubmit} />
+        </div>
+      )}
       <Card>
         <CardBody className="flex justify-center items-center">
           <p className="text-lg font-bold">Welcome to your coaching session</p>
         </CardBody>
       </Card>
-      <Card>
-        <CardBody className="flex flex-col justify-center items-start p-4">
-          <ul className="pl-5">
-            <li className="flex items-center">
-              <FontAwesomeIcon icon={faCheckCircle} className="mr-2 text-indigo-500" />
-              We’re glad you’re here! Start by selecting your language and sharing your name. Next reflect on a few things to think about to help you make the most of your coaching session today.
-            </li>
-            <li className="flex items-center">
-              <FontAwesomeIcon icon={faCheckCircle} className="mr-2 text-indigo-500" />
-              Identify your coaching topic: Is it a specific situation, relationship or behavior vs part of a bigger challenge or pattern you’d like to change?
-            </li>
-            <li className="flex items-center">
-              <FontAwesomeIcon icon={faCheckCircle} className="mr-2 text-indigo-500" />
-              Determine where your coach can help you most: Do you want help in identifying the problem, exploring it more deeply, brainstorming solutions or creating a clear action plan?
-            </li>
-          </ul>
-        </CardBody>
-      </Card>
+    
       <Card>
         <CardBody className="h-[500px] flex flex-col justify-center items-center">
           {stream ? (
@@ -315,43 +346,53 @@ export default function InteractiveAvatar() {
             </div>
           ) : !isLoadingSession ? (
             <div className="h-full justify-center items-center flex flex-col gap-8 w-[500px] self-center">
-              <div className="flex flex-col gap-2 w-full">
+              <div className="flex flex-col gap-2 w-full items-center">
                 <p className="text-sm font-medium leading-none">
-                  Enter your first name
                 </p>
                 <Input
+                  className="w-1/2"
                   placeholder="First Name"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                 />
                 <p className="text-sm font-medium leading-none">
-                  Enter your last name
                 </p>
                 <Input
+                  className="w-1/2"
                   placeholder="Last Name"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                 />
                 <p className="text-sm font-medium leading-none">
-                  Enter your role
                 </p>
                 <Input
+                  className="w-1/2"
                   placeholder="Role"
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
                 />
                 <p className="text-sm font-medium leading-none">
-                  Enter your email
                 </p>
                 <Input
+                  className="w-1/2"
                   placeholder="Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
+                 <p className="text-sm font-medium leading-none">
+                 </p>
+                <Input
+                  className="w-1/2"
+                  placeholder="LinkedIn Profile URL"
+                  value={linkedInUrl}
+                  onChange={(e) => setLinkedInUrl(e.target.value)}
+                />
+                <p className="text-sm font-medium leading-none">
+                </p>
                 <Select
+                  className="max-w-xs w-1/2"
                   label="Select language"
                   placeholder="Select language"
-                  className="max-w-xs"
                   selectedKeys={[language]}
                   onChange={(e) => {
                     setLanguage(e.target.value);
@@ -364,19 +405,68 @@ export default function InteractiveAvatar() {
                   ))}
                 </Select>
               </div>
+              <Card>
+        <CardBody className="flex flex-col justify-center items-center p-4">
+          <h2 className="text-lg font-bold mb-4 text-center">What do you want to work on today?</h2>
+          <div className="flex flex-row gap-4">
+            <Button
+              className={`bg-gradient-to-tr from-indigo-500 to-indigo-300 text-white rounded-md ${
+                selectedTopic === "Help resolving a specific challenge" ? "bg-red-700" : ""
+              }`}
+              size="md"
+              variant="shadow"
+              onClick={() => {
+                setUserTopic("Help resolving a specific challenge");
+                setSelectedTopic("Help resolving a specific challenge");
+              }}
+            >
+              Help resolving a specific challenge
+            </Button>
+            <Button
+              className={`bg-gradient-to-tr from-indigo-500 to-indigo-300 text-white rounded-md ${
+                selectedTopic === "Help with a broader issue or challenge I'd like to explore" ? "bg-red-700" : ""
+              }`}
+              size="md"
+              variant="shadow"
+              onClick={() => {
+                setUserTopic("Help with a broader issue or challenge I'd like to explore");
+                setSelectedTopic("Help with a broader issue or challenge I'd like to explore");
+              }}
+            >
+              Help with a broader topic I'd like to explore
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
+            </div>
+          ) : (
+            <Spinner color="default" size="lg" />
+          )}
+        </CardBody>
+        <Divider />
+        <CardFooter className="flex flex-col gap-3 relative">
+          <div className="w-full text-center">
+            {!sessionStarted ? (
               <Button
-                className="bg-gradient-to-tr from-indigo-500 to-indigo-300 w-full text-white"
+                className="bg-gradient-to-tr from-indigo-500 to-indigo-300 text-white"
                 size="md"
                 variant="shadow"
                 onClick={startSession}
               >
                 Start session
               </Button>
-            </div>
-          ) : (
-            <Spinner color="default" size="lg" />
-          )}
-        </CardBody>
+            ) : (
+              <Button
+                isDisabled={!isUserTalking}
+                className="bg-gradient-to-tr from-indigo-500 to-indigo-300 text-white"
+                size="md"
+                variant="shadow"
+              >
+                {isUserTalking ? "Listening" : "Ready"}
+              </Button>
+            )}
+          </div>
+        </CardFooter>
       </Card>
     </div>
   );

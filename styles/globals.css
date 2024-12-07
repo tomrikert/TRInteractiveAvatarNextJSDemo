@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+body {
+  background-color: theme('colors.background');
+  color: theme('colors.text');
+  font-family: 'Inter', sans-serif;
+}
+
+.card {
+  @apply bg-secondary p-6 rounded-lg shadow-md;
+}
+
+.button {
+  @apply bg-primary text-white rounded-lg px-4 py-2 hover:bg-blue-600;
+}
+
+.input {
+  @apply border border-gray-300 rounded-lg p-2 focus:border-primary;
+}
+
 li {
   list-style-type: square;
   margin-left: 30px;
