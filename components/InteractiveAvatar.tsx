@@ -172,9 +172,9 @@ export default function InteractiveAvatar() {
       setData(res);
       setSessionStarted(true);
 
-      function createIntroSpeech() {
+      const createIntroSpeech = () => {
         return `Welcome! I'm excited to start working with you, ${firstName}. I see that your role is as a ${role} and that you'd like to discuss the following topic: ${userTopic}. Shall we get started?`;
-      }
+      };
       // Speak introductory text
       await avatar.current.speak({
         text: createIntroSpeech(),
@@ -264,15 +264,15 @@ export default function InteractiveAvatar() {
     }
   }, [mediaStream, stream]);
 
-  const handleRatingSubmit = (rating) => {
+  const handleRatingSubmit = (rating: number) => {
     setRating(rating);
     setShowRating(false);
     updateUserDataWithRating(rating); // Call the API to update user data
   };
 
-  async function updateUserDataWithRating(rating) {
+  async function updateUserDataWithRating(rating: number) {
     const sessionData = {
-      date: new Date().toISOString(),
+      date: new Date().toISOString(), 
       topic: userTopic,
       rating,
     };
@@ -300,7 +300,7 @@ export default function InteractiveAvatar() {
     <div className="w-full flex flex-col gap-4">
       {showRating && (
         <div className="flex justify-center items-center h-screen">
-          <RatingStars onSubmit={handleRatingSubmit} />
+          <RatingStars label="Rate your session" onSubmit={handleRatingSubmit} />
         </div>
       )}
       <Card>

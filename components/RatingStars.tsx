@@ -1,9 +1,9 @@
 import { useState } from "react";
 
-export default function RatingStars({ label, onSubmit }) {
+export default function RatingStars({ label, onSubmit }: { label: string; onSubmit: (rating: number) => void }) {
   const [rating, setRating] = useState(0);
 
-  const handleStarClick = (index) => {
+  const handleStarClick = (index: number) => {
     setRating(index + 1);
   };
 
